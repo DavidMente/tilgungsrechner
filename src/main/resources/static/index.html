@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hypoport Challenge</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+</head>
+<body>
+<div id="app" class="container">
+    <section class="section" @change="updateTilgungsplan">
+        <h1 class="title">Tilgungsplan</h1>
+        <div class="field">
+            <label class="label">
+                Darlehensbetrag in Euro
+                <input class="input" type="number" v-model="darlehensbetrag"/>
+            </label>
+        </div>
+        <div class="field">
+            <label class="label">
+                Sollzins in %
+                <input class="input" type="number" v-model="sollzins" step="0.01"/>
+            </label>
+        </div>
+        <div class="field">
+            <label class="label">
+                Anfängliche Tilgung in %
+                <input class="input" type="number" v-model="anfaenglicheTilgung" step="0.01"/>
+            </label>
+        </div>
+        <div class="field">
+            <label class="label">
+                Zinsbindung in Jahren
+                <input class="input" type="number" v-model="zinsbindung" min="1"/>
+            </label>
+        </div>
+    </section>
+    <section v-if="tilgungsplan" class="section has-text-right">
+        <div class="columns has-text-weight-bold">
+            <div class="column has-text-left">Datum</div>
+            <div class="column">Restschuld</div>
+            <div class="column">Zinsen</div>
+            <div class="column">Tilgung(+) / Auszahlung(-)</div>
+            <div class="column">Rate</div>
+        </div>
+        <div class="columns">
+            <div class="column has-text-left">{{ tilgungsplan.auszahlung.datum }}</div>
+            <div class="column">{{ tilgungsplan.auszahlung.restSchuld | euro }}</div>
+            <div class="column">{{ tilgungsplan.auszahlung.zinsen | euro }}</div>
+            <div class="column">{{ tilgungsplan.auszahlung.tilgung | euro }}</div>
+            <div class="column">{{ tilgungsplan.auszahlung.monatsRate | euro }}</div>
+        </div>
+        <div v-for="eintrag in tilgungsplan.eintraege" class="columns">
+            <div class="column has-text-left">{{ eintrag.datum }}</div>
+            <div class="column">{{ eintrag.restSchuld | euro }}</div>
+            <div class="column">{{ eintrag.zinsen | euro }}</div>
+            <div class="column">{{ eintrag.tilgung | euro }}</div>
+            <div class="column">{{ eintrag.monatsRate | euro }}</div>
+        </div>
+        <div class="columns has-text-weight-bold">
+            <div class="column has-text-left">Zinsbindungsende</div>
+            <div class="column">{{ tilgungsplan.zinsbindungsende.restSchuld | euro }}</div>
+            <div class="column">{{ tilgungsplan.zinsbindungsende.zinsen | euro }}</div>
+            <div class="column">{{ tilgungsplan.zinsbindungsende.tilgung | euro }}</div>
+            <div class="column">{{ tilgungsplan.zinsbindungsende.monatsRate | euro }}</div>
+        </div>
+    </section>
+</div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js"
+        integrity="sha512-quHCp3WbBNkwLfYUMd+KwBAgpVukJu5MncuQaWXgCrfgcxCJAq/fo+oqrRKOj+UKEmyMCG3tb8RB63W+EmrOBg=="
+        crossorigin="anonymous"></script>
+<script>
+    const app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                tilgungsplan: null,
+                darlehensbetrag: 100000,
+                sollzins: 2.12,
+                anfaenglicheTilgung: 2,
+                zinsbindung: 10
+            }
+        },
+        created() {
+            this.updateTilgungsplan()
+        },
+        methods: {
+            updateTilgungsplan() {
+                axios.get('/tilgungsplan', {
+                    params: {
+                        darlehensbetrag: this.darlehensbetrag,
+                        sollzins: this.sollzins,
+                        anfaenglicheTilgung: this.anfaenglicheTilgung,
+                        zinsbindung: this.zinsbindung
+                    }
+                }).then(({data}) => {
+                    this.tilgungsplan = data;
+                })
+            }
+        },
+        filters: {
+            euro(value) {
+                const decimals = value.toString().split('.')[1]
+                let padding = ',00';
+                if (decimals !== undefined) {
+                    padding = '0'.repeat(2 - decimals.length)
+                }
+                return value.toLocaleString('de-DE') + padding + ' €'
+            }
+        }
+    })
+
+
+</script>
+</html>
